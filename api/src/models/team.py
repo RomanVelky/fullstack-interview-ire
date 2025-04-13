@@ -9,7 +9,7 @@ from src.database import Base
 class Team(Base):
     __tablename__ = "team"
 
-    id = Column(String, primary_key=True, default=str(uuid.uuid4))
+    id = Column(String, primary_key=True, default=lambda:str(uuid.uuid4()))
     name = Column(String, nullable=False)
     parent_team_id = Column(String, ForeignKey("team.id"), nullable=True)
     parent_team = relationship("Team", foreign_keys=[parent_team_id])
@@ -35,8 +35,22 @@ class TeamService:
         query = f"SELECT * FROM {self.model.__tablename__}"
         return self.session.execute(text(query)).fetchall()
 
-    def update(self):
-        pass
+    def update(self, team_id, **values):
+        team = self.session.query(self.model).filter(self.model.id == team_id).first()
+        if not team:
+            return None
+        
+        for key, value in values.items():
+            setattr(team, key, value)
+        
+        self.session.commit()
+        self.session.refresh(team)
+        return team
 
-    def delete(self):
-        pass
+    def delete(self, team_id):
+        team = self.session.query(self.model).filter(self.model.id == team_id).first()
+        if team:
+            self.session.delete(team)
+            self.session.commit()
+            return True
+        return False

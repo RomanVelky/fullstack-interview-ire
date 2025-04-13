@@ -1,7 +1,7 @@
 import Typography from "@mui/material/Typography";
 
 export const FormError = ({ text }: { text?: string }) => (
-  <Typography component="div" color="error" variant="caption">
+  <Typography component="span" color="error" variant="caption">
     {text}
   </Typography>
 );

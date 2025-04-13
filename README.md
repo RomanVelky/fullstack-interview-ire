@@ -12,7 +12,7 @@ Tento repozitář obsahuje zadání úkolu pro výběrové řízení na pozici f
    - backend má adresu [localhost:8000](http://localhost:8000) ([dokumentace](http://localhost:8000/docs))
 3. Prozkoumejte aplikaci. Všechno důležité najdete uvnitř.
 
-💡 _V případě problému s hot reloadem aplikace na Windows (WSL) nechte běžet frontend lokálně, nebo složku s projektem přesuňte přímo do WSL filesystému._  
+💡 _V případě problému s hot reloadem aplikace na Windows (WSL) nechte běžet frontend lokálně, nebo složku s projektem přesuňte přímo do WSL filesystému._
 
 ---
 
@@ -21,3 +21,7 @@ Tento repozitář obsahuje zadání úkolu pro výběrové řízení na pozici f
 - Fastapi: https://fastapi.tiangolo.com/learn/
 - Material UI: https://mui.com/material-ui/getting-started/
 - NextJS: https://nextjs.org/docs
+
+### Poznamka
+
+upravene v jednom commite, kvoli viditelnosti vsetkych vykonanych zmien naraz

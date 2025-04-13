@@ -8,6 +8,8 @@ import {
   TextField,
   Typography,
   Button,
+  MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import { useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -15,6 +17,9 @@ import * as yup from "yup";
 import { FormFieldError } from "../forms/FormFieldError";
 import { FormError } from "../forms/FormError";
 import { FormSuccess } from "../forms/FormSuccess";
+import { useCreateEmployee, useUpdateEmployee } from "@/hooks/useEmployees";
+import { useGetAllTeamsFlat } from "@/hooks/useTeams";
+import { Team, Employee } from "@/types/types";
 
 const schema = yup.object().shape({
   name: yup.string().required("Name is required"),
@@ -27,29 +32,103 @@ const schema = yup.object().shape({
     .min(yup.ref("startDate"), "End date can't be before start date"),
 });
 
-export const EmployeeAdd = (
-  {
-    /* teams */
-  }
-) => {
+export const EmployeeAdd = ({
+  onSuccess,
+  initialData,
+  isEditMode = false,
+}: {
+  onSuccess?: () => void;
+  initialData?: Employee;
+  isEditMode?: boolean;
+}) => {
   const [formError, setFormError] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const { data: teams, isLoading: isTeamsLoading } = useGetAllTeamsFlat();
+  const createEmployeeMutation = useCreateEmployee();
+  const updateEmployeeMutation = useUpdateEmployee();
 
   const {
     control,
     reset,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: yupResolver(schema) });
+  } = useForm({
+    resolver: yupResolver(schema),
+    values: {
+      name: initialData?.name || "",
+      surname: initialData?.surname || "",
+      position: initialData?.position || "",
+      team: initialData?.team_id || "",
+      startDate: initialData?.start_date
+        ? new Date(initialData.start_date)
+        : undefined,
+      endDate: initialData?.end_date
+        ? new Date(initialData.end_date)
+        : undefined,
+    },
+  });
 
   const onSubmit = handleSubmit((formData) => {
-    console.log(formData);
+    const employeeData = {
+      name: formData.name,
+      surname: formData.surname,
+      position: formData.position,
+      team_id: formData.team || undefined,
+      start_date: formData.startDate ? formData.startDate.toISOString() : null,
+      end_date: formData.endDate ? formData.endDate.toISOString() : null,
+    };
+
+    if (isEditMode && initialData) {
+      updateEmployeeMutation.mutation.mutate(
+        {
+          id: initialData.id,
+          data: employeeData,
+        },
+        {
+          onSuccess: () => {
+            updateEmployeeMutation.queryClient.invalidateQueries({
+              queryKey: ["employees"],
+            });
+
+            setSuccess(true);
+            setTimeout(() => {
+              setSuccess(false);
+              if (onSuccess) onSuccess();
+            }, 2000);
+          },
+          onError: () => {
+            setFormError(true);
+            setTimeout(() => setFormError(false), 2000);
+          },
+        }
+      );
+    } else {
+      createEmployeeMutation.mutation.mutate(employeeData, {
+        onSuccess: () => {
+          createEmployeeMutation.queryClient.invalidateQueries({
+            queryKey: ["employees"],
+          });
+
+          setSuccess(true);
+          reset();
+          setTimeout(() => {
+            setSuccess(false);
+            if (onSuccess) onSuccess();
+          }, 2000);
+        },
+        onError: () => {
+          setFormError(true);
+          setTimeout(() => setFormError(false), 2000);
+        },
+      });
+    }
   });
 
   return (
     <Box>
       <Typography variant="h4" mb={3}>
-        Add employee
+        {isEditMode ? "Edit employee" : "Add employee"}
       </Typography>
       <form onSubmit={onSubmit}>
         <Stack direction="row" gap={3}>
@@ -88,11 +167,18 @@ export const EmployeeAdd = (
             control={control}
             render={({ field }) => (
               <Select {...field} label="Team">
-                {/*                 {teams.map((team) => (
-                  <MenuItem key={team.id} value={team.id}>
-                    {team.name}
+                <MenuItem value="">Žiadny</MenuItem>
+                {isTeamsLoading ? (
+                  <MenuItem disabled>
+                    <CircularProgress size={20} />
                   </MenuItem>
-                ))} */}
+                ) : (
+                  teams?.map((team: Team) => (
+                    <MenuItem key={team.id} value={team.id}>
+                      {team.name}
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             )}
           />
@@ -147,11 +233,41 @@ export const EmployeeAdd = (
           {errors.position && <FormFieldError text={errors.position.message} />}
         </Box>
 
-        <Button type="submit" variant="contained" sx={{ my: 3 }}>
-          Add employee
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          sx={{ mt: 3 }}
+          disabled={
+            isEditMode
+              ? updateEmployeeMutation.mutation.isPending
+              : createEmployeeMutation.mutation.isPending
+          }
+        >
+          {isEditMode ? (
+            updateEmployeeMutation.mutation.isPending ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Update employee"
+            )
+          ) : createEmployeeMutation.mutation.isPending ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            "Add employee"
+          )}
         </Button>
-        {formError && <FormError text="Please fill out the form correctly" />}
-        {success && <FormSuccess text="Employee Added" />}
+        {formError && (
+          <FormError
+            text={
+              isEditMode ? "Error updating employee" : "Error adding employee"
+            }
+          />
+        )}
+        {success && (
+          <FormSuccess
+            text={isEditMode ? "Employee Updated" : "Employee Added"}
+          />
+        )}
       </form>
     </Box>
   );

@@ -100,7 +100,7 @@ export const SideBar = ({
                 <ListItemIcon>
                   <GroupIcon />
                 </ListItemIcon>
-                <ListItemText primary="Týmy" />
+                <ListItemText primary="Tímy" />
               </NavItem>
             </Link>
           </StyledListItem>

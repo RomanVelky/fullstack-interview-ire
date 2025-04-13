@@ -10,7 +10,7 @@ from src.database import Base
 class Employee(Base):
     __tablename__ = "employee"
 
-    id = Column(String, primary_key=True, default=str(uuid.uuid4))
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     surname = Column(String, nullable=False)
     position = Column(String, nullable=False)
@@ -47,8 +47,20 @@ class EmployeeService:
         query = f"SELECT * FROM {self.model.__tablename__} WHERE team_id = '{team_id}';"
         return self.session.execute(text(query)).fetchall()
 
-    def update(self):
-        pass
+    def update(self, employee_id, **values):
+        employee = self.session.query(self.model).filter(self.model.id == employee_id).first()
+        if not employee:
+            return None
+        
+        for key, value in values.items():
+            setattr(employee, key, value)
+        
+        self.session.commit()
+        self.session.refresh(employee)
+        return employee
 
-    def delete(self):
-        pass
+    def delete(self, employee_id):
+        query = f"DELETE FROM {self.model.__tablename__} WHERE id = '{employee_id}';"
+        result = self.session.execute(text(query))
+        self.session.commit()
+        return {"status": "success", "message": f"Employee {employee_id} deleted successfully"}

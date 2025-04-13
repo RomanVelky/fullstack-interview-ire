@@ -39,6 +39,6 @@ def verify_token(
 ):
     if credentials.credentials != STATIC_TOKEN:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Invalid or missing token"
+            status_code=status.HTTP_401_UNAUTHORIZED,  detail="Invalid authentication credentials",
         )
     return True
